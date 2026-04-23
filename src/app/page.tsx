@@ -64,10 +64,10 @@ export default function LandingPage() {
 
           <div className="flex overflow-x-auto snap-x snap-mandatory pb-8 gap-6 md:grid md:grid-cols-2 lg:grid-cols-4 md:overflow-visible no-scrollbar">
             {[
-              { src: '/images/progress-4.jpg', label: 'El Comienzo', desc: 'Mentalidad de cambio' },
-              { src: '/images/progress-3.jpg', label: 'Primeros Pasos', desc: 'Constancia diaria' },
-              { src: '/images/progress-2.jpg', label: 'Evolución', desc: 'Disciplina total' },
-              { src: '/images/progress-1.jpg', label: 'Mi Mejor Versión', desc: 'Resultados reales' },
+              { src: '/images/progress-1.jpg', label: 'El Comienzo', desc: 'Mentalidad de cambio' },
+              { src: '/images/progress-2.jpg', label: 'Primeros Pasos', desc: 'Constancia diaria' },
+              { src: '/images/progress-3.jpg', label: 'Evolución', desc: 'Disciplina total' },
+              { src: '/images/progress-4.jpg', label: 'Mi Mejor Versión', desc: 'Resultados reales' },
             ].map((img, index) => (
               <div key={index} className="flex-none w-[85%] sm:w-[60%] md:w-full snap-center group relative rounded-3xl overflow-hidden aspect-[3/4] border border-white/10 shadow-2xl transition-all duration-300">
                 <img 
