@@ -9,10 +9,18 @@ export async function proxy(request: NextRequest) {
   // First, we create the response from intl middleware
   const response = intlMiddleware(request);
 
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    // Si no hay variables de entorno en Vercel, saltar la autenticación para evitar crash 500/404
+    return response;
+  }
+
   // Then we handle Supabase session using that response
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+    supabaseUrl,
+    supabaseKey,
     {
       cookies: {
         getAll() {
