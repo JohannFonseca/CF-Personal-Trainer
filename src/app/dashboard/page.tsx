@@ -1,8 +1,8 @@
 'use client';
 
-import { Link } from '@/i18n/routing';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Dumbbell, Calendar, Clock, Image as ImageIcon } from 'lucide-react';
+import { Dumbbell, Image as ImageIcon } from 'lucide-react';
 
 export default function DashboardPage() {
   return (
