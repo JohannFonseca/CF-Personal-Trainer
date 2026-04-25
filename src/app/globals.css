@@ -1,39 +1,48 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
+@theme {
+  --color-primary: #0066FF;
+  --color-background: #050505;
+  --color-card: #121212;
+  --color-foreground: #ffffff;
+  
+  --radius-xl: 1.5rem;
+  --radius-2xl: 2rem;
+  --radius-3xl: 3rem;
+
+  --animate-bounce-short: bounce-short 1s ease-in-out infinite;
+
+  @keyframes bounce-short {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+  }
+}
+
+/* Custom CSS Variables for Glassmorphism */
 :root {
-  --background: #050505;
-  --foreground: #ffffff;
-  --primary: #0066FF;
-  --primary-foreground: #ffffff;
-  --card: #121212;
-  --card-foreground: #ffffff;
-  --border: rgba(255, 255, 255, 0.08);
   --glass: rgba(255, 255, 255, 0.03);
   --glass-border: rgba(255, 255, 255, 0.06);
-  --radius: 1.5rem;
 }
 
-body {
-  background-color: var(--background);
-  color: var(--foreground);
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  -webkit-font-smoothing: antialiased;
+@layer base {
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
 }
 
-/* Glassmorphism Utilities */
-.glass-card {
-  background: var(--glass);
-  backdrop-filter: blur(20px);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius);
-}
+@layer components {
+  .glass-card {
+    @apply bg-card/40 backdrop-blur-2xl border border-white/5 rounded-3xl;
+  }
 
-.glass-nav {
-  background: rgba(5, 5, 5, 0.8);
-  backdrop-filter: blur(15px);
-  border-top: 1px solid var(--glass-border);
+  .glass-nav {
+    @apply bg-background/80 backdrop-blur-xl border-t border-white/5;
+  }
+
+  .btn-primary {
+    @apply bg-primary text-white font-black py-4 px-8 rounded-2xl shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all;
+  }
 }
 
 /* Custom Scrollbar */
@@ -48,26 +57,13 @@ body {
   border-radius: 10px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--primary);
+  background: #0066FF;
 }
 
-/* Animations */
-@keyframes slideUp {
-  from { transform: translateY(20px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-}
-
-.animate-slide-up {
-  animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-/* Hide scrollbar for Chrome, Safari and Opera */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
-
-/* Hide scrollbar for IE, Edge and Firefox */
 .no-scrollbar {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }

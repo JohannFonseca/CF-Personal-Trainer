@@ -150,7 +150,7 @@ export default function WorkoutsPage() {
         <p className="text-sm font-bold italic text-foreground/40 leading-relaxed max-w-[200px] mx-auto">
           "El único entrenamiento malo es el que no sucedió."
         </p>
-      </div>
+      </footer>
 
     </div>
   );
