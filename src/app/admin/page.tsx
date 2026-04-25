@@ -9,6 +9,8 @@ import {
   TrendingUp, Calendar, Target
 } from 'lucide-react';
 
+const SUPER_ADMINS = ['arielfonseca049@gmail.com', 'jhnfonseca22@gmail.com'];
+
 type Profile = {
   id: string;
   full_name: string | null;
@@ -36,18 +38,24 @@ export default function AdminPage() {
           return;
         }
 
-        const { data: profile, error: profileError } = await supabase
+        // VERIFICACIÓN NIVEL 1: Por Código (Super Admin)
+        const isSuper = SUPER_ADMINS.includes(user.email?.toLowerCase() || '');
+
+        const { data: profile } = await supabase
           .from('profiles')
           .select('role, full_name')
           .eq('id', user.id)
           .single();
 
-        if (profileError || !profile || profile.role !== 'admin') {
+        // Si no es super admin Y no tiene el rol en DB, redirigir
+        if (!isSuper && (!profile || profile.role !== 'admin')) {
           router.replace('/dashboard');
           return;
         }
 
-        setAdminProfile({ name: profile.full_name || user.email || 'Admin' });
+        setAdminProfile({ 
+          name: profile?.full_name || user.email?.split('@')[0] || 'Entrenador' 
+        });
 
         const { data: allProfiles, error: clientsError } = await supabase
           .from('profiles')
@@ -76,7 +84,7 @@ export default function AdminPage() {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center space-y-4">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
-        <p className="text-foreground/40 text-sm font-medium">Cargando panel de control...</p>
+        <p className="text-foreground/40 text-sm font-medium tracking-widest uppercase">Validando Identidad Coach...</p>
       </div>
     );
   }
@@ -218,10 +226,10 @@ export default function AdminPage() {
                     </div>
                     <div className="bg-white/5 px-5 py-2.5 rounded-2xl border border-white/5 flex flex-col items-center min-w-[100px]">
                       <span className="text-[10px] text-foreground/30 font-bold uppercase tracking-tighter">Frecuencia</span>
-                      <span className="text-sm font-bold text-foreground/80">{client.training_days || 0} días/sem</span>
+                      <span className="text-sm font-bold text-foreground/80">{client.training_days || 0} d/s</span>
                     </div>
                     <button className="flex-1 md:flex-none bg-primary text-white px-8 py-4 rounded-2xl font-black text-sm hover:scale-105 active:scale-95 transition-all shadow-xl shadow-primary/20 flex items-center justify-center space-x-2">
-                      <span>Ver Perfil</span>
+                      <span>Perfil</span>
                       <ChevronRight size={18} />
                     </button>
                   </div>
