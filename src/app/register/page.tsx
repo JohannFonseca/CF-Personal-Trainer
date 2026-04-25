@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
 export default function RegisterPage() {
@@ -22,7 +22,7 @@ export default function RegisterPage() {
     
     const supabase = createClient();
     
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -38,7 +38,9 @@ export default function RegisterPage() {
       return;
     }
 
+    // New users are clients by default.
     router.push('/dashboard');
+    router.refresh();
   };
 
   return (
@@ -56,8 +58,11 @@ export default function RegisterPage() {
         animate={{ opacity: 1, y: 0 }}
       >
         <h2 className="mt-6 text-center text-3xl font-extrabold text-foreground">
-          Registrarse
+          Crea tu cuenta
         </h2>
+        <p className="text-center text-sm text-foreground/50 mt-2">
+          Únete a CF Trainer y comienza hoy
+        </p>
       </motion.div>
 
       <motion.div 
@@ -69,7 +74,7 @@ export default function RegisterPage() {
         <div className="bg-card py-8 px-4 shadow-2xl sm:rounded-2xl sm:px-10 border border-white/5">
           <form className="space-y-6" onSubmit={handleRegister}>
             {error && (
-              <div className="bg-red-500/10 text-red-500 p-3 rounded-md text-sm border border-red-500/20">
+              <div className="bg-red-500/10 text-red-400 p-3 rounded-md text-sm border border-red-500/20">
                 {error}
               </div>
             )}
@@ -80,7 +85,7 @@ export default function RegisterPage() {
                 <input
                   type="text"
                   required
-                  className="appearance-none block w-full px-3 py-2 border border-white/10 rounded-md shadow-sm bg-background placeholder-white/40 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm text-foreground"
+                  className="appearance-none block w-full px-3 py-2 border border-white/10 rounded-md shadow-sm bg-background placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm text-foreground"
                   value={fullName}
                   onChange={e => setFullName(e.target.value)}
                 />
@@ -93,7 +98,7 @@ export default function RegisterPage() {
                 <input
                   type="email"
                   required
-                  className="appearance-none block w-full px-3 py-2 border border-white/10 rounded-md shadow-sm bg-background placeholder-white/40 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm text-foreground"
+                  className="appearance-none block w-full px-3 py-2 border border-white/10 rounded-md shadow-sm bg-background placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm text-foreground"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                 />
@@ -106,7 +111,7 @@ export default function RegisterPage() {
                 <input
                   type="password"
                   required
-                  className="appearance-none block w-full px-3 py-2 border border-white/10 rounded-md shadow-sm bg-background placeholder-white/40 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm text-foreground"
+                  className="appearance-none block w-full px-3 py-2 border border-white/10 rounded-md shadow-sm bg-background placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm text-foreground"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                 />
@@ -117,9 +122,14 @@ export default function RegisterPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-[0_0_20px_4px_rgba(37,99,235,0.2)] text-sm font-bold text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-md shadow-[0_0_20px_4px_rgba(37,99,235,0.2)] text-sm font-bold text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? 'Cargando...' : 'Registrarse'}
+                {loading ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    Creando cuenta...
+                  </>
+                ) : 'Registrarse'}
               </button>
             </div>
           </form>
