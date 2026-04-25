@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { Share2, User, LogOut, LayoutDashboard } from 'lucide-react';
+import { Share2, User, LogOut, LayoutDashboard, ShieldCheck } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
 export function Navbar() {
@@ -13,17 +13,33 @@ export function Navbar() {
 
   useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getUser().then(async ({ data }) => {
-      if (data.user) {
-        setUser(data.user);
+    const fetchSession = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUser(user);
         const { data: profile } = await supabase
           .from('profiles')
           .select('role')
-          .eq('id', data.user.id)
+          .eq('id', user.id)
           .single();
+        
         setRole(profile?.role || 'client');
       }
+    };
+    
+    fetchSession();
+    
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setUser(session.user);
+        fetchSession();
+      } else {
+        setUser(null);
+        setRole(null);
+      }
     });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const handleLogout = async () => {
@@ -46,31 +62,38 @@ export function Navbar() {
           </div>
 
           <div className="flex items-center space-x-3">
-            <a href="https://instagram.com" target="_blank" rel="noreferrer" className="text-foreground hover:text-primary transition-colors">
-              <Share2 size={20} />
-            </a>
+            {user && (
+              <div className="hidden md:flex flex-col items-end mr-4">
+                <span className="text-[10px] text-foreground/40 font-bold uppercase">{role === 'admin' ? 'Coach' : 'Atleta'}</span>
+                <span className="text-xs font-medium text-foreground/70">{user.email}</span>
+              </div>
+            )}
 
             {user ? (
               <div className="flex items-center space-x-2">
                 <Link
                   href={role === 'admin' ? '/admin' : '/dashboard'}
-                  className="flex items-center space-x-1 text-sm font-medium hover:text-primary transition-colors bg-white/5 px-3 py-1.5 rounded-full"
+                  className={`flex items-center space-x-2 text-sm font-bold transition-all px-4 py-2 rounded-full shadow-lg ${
+                    role === 'admin' 
+                    ? 'bg-primary text-white shadow-primary/20' 
+                    : 'bg-white/5 text-foreground hover:bg-white/10'
+                  }`}
                 >
-                  <LayoutDashboard size={15} />
-                  <span className="hidden sm:inline">{role === 'admin' ? 'Panel Admin' : 'Mi Dashboard'}</span>
+                  {role === 'admin' ? <ShieldCheck size={16} /> : <LayoutDashboard size={16} />}
+                  <span>{role === 'admin' ? 'Panel Admin' : 'Mi Dashboard'}</span>
                 </Link>
                 <button
                   onClick={handleLogout}
-                  className="flex items-center space-x-1 text-sm font-medium text-foreground/60 hover:text-red-400 transition-colors bg-white/5 px-3 py-1.5 rounded-full"
+                  className="p-2 text-foreground/60 hover:text-red-400 transition-colors bg-white/5 rounded-full"
+                  title="Cerrar Sesión"
                 >
-                  <LogOut size={15} />
-                  <span className="hidden sm:inline">Salir</span>
+                  <LogOut size={18} />
                 </button>
               </div>
             ) : (
-              <Link href="/login" className="flex items-center space-x-1 text-sm font-medium hover:text-primary transition-colors bg-white/5 px-3 py-1.5 rounded-full">
+              <Link href="/login" className="flex items-center space-x-2 text-sm font-bold text-white bg-primary hover:bg-primary/90 px-6 py-2.5 rounded-full transition-all shadow-lg shadow-primary/20">
                 <User size={16} />
-                <span className="hidden sm:inline">Iniciar Sesión</span>
+                <span>Entrar</span>
               </Link>
             )}
           </div>
