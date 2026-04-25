@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import { 
   Users, Activity, LogOut, Loader2, AlertCircle, 
   UserCircle, ShieldCheck, Search, Filter, ChevronRight,
-  TrendingUp, Calendar, Target, X, Weight, Move
+  TrendingUp, Calendar, Target, X, Weight, Move, User, Clock
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
