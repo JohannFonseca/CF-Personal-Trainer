@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { 
   X, Search, Plus, Trash2, Dumbbell, 
-  Clock, Hash, Activity, Check, Loader2 
+  Clock, Hash, Activity, Check, Loader2, Copy
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -35,6 +35,8 @@ export default function AssignRoutineModal({ isOpen, onClose, clientId, clientNa
   const supabase = createClient();
   const [loading, setLoading] = useState(false);
   const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [templates, setTemplates] = useState<any[]>([]);
+  const [showTemplates, setShowTemplates] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedExercises, setSelectedExercises] = useState<RoutineItem[]>([]);
   const [saving, setSaving] = useState(false);
@@ -43,7 +45,9 @@ export default function AssignRoutineModal({ isOpen, onClose, clientId, clientNa
   useEffect(() => {
     if (isOpen) {
       fetchExercises();
+      fetchTemplates();
       setStatus(null);
+      setShowTemplates(false);
     }
   }, [isOpen]);
 
@@ -52,6 +56,28 @@ export default function AssignRoutineModal({ isOpen, onClose, clientId, clientNa
     const { data } = await supabase.from('exercises').select('*').order('name');
     setExercises(data || []);
     setLoading(false);
+  };
+
+  const fetchTemplates = async () => {
+    const { data } = await supabase
+      .from('routines')
+      .select('*, routine_exercises(*, exercises(name))')
+      .order('name');
+    setTemplates(data || []);
+  };
+
+  const handleLoadTemplate = (template: any) => {
+    const templateExercises = template.routine_exercises.map((re: any) => ({
+      exercise_id: re.exercise_id,
+      name: re.exercises.name,
+      sets: re.sets,
+      reps: re.reps,
+      rest_time: re.rest_time,
+      day_of_week: null
+    }));
+    
+    setSelectedExercises(templateExercises);
+    setShowTemplates(false);
   };
 
   const addExercise = (exercise: Exercise) => {
@@ -139,24 +165,37 @@ export default function AssignRoutineModal({ isOpen, onClose, clientId, clientNa
               <div className="p-8 space-y-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-2xl font-black tracking-tighter uppercase">Biblioteca</h2>
-                    <p className="text-[10px] text-foreground/40 font-bold uppercase tracking-widest">Busca y añade ejercicios</p>
+                    <h2 className="text-2xl font-black tracking-tighter uppercase">{showTemplates ? 'Plantillas' : 'Biblioteca'}</h2>
+                    <p className="text-[10px] text-foreground/40 font-bold uppercase tracking-widest">{showTemplates ? 'Selecciona una rutina lista' : 'Busca y añade ejercicios'}</p>
                   </div>
-                  <div className="md:hidden">
-                    <button onClick={onClose} className="p-2 bg-white/5 rounded-xl"><X size={20} /></button>
+                  <div className="flex space-x-2">
+                    <button 
+                      onClick={() => setShowTemplates(!showTemplates)}
+                      className={`p-3 rounded-2xl transition-all flex items-center space-x-2 text-[10px] font-black uppercase tracking-widest ${
+                        showTemplates ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-white/5 text-foreground/40 hover:bg-white/10'
+                      }`}
+                    >
+                      <Copy size={16} />
+                      <span className="hidden sm:inline">{showTemplates ? 'Ver Biblioteca' : 'Cargar Plantilla'}</span>
+                    </button>
+                    <div className="md:hidden">
+                      <button onClick={onClose} className="p-3 bg-white/5 rounded-2xl"><X size={20} /></button>
+                    </div>
                   </div>
                 </div>
 
-                <div className="relative">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground/20" size={18} />
-                  <input 
-                    type="text"
-                    placeholder="Filtrar por nombre o músculo..."
-                    className="w-full bg-white/5 border border-white/5 rounded-2xl pl-12 pr-6 py-4 outline-none focus:ring-2 focus:ring-primary/20 font-bold text-sm"
-                    value={searchTerm}
-                    onChange={e => setSearchTerm(e.target.value)}
-                  />
-                </div>
+                {!showTemplates && (
+                  <div className="relative">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground/20" size={18} />
+                    <input 
+                      type="text"
+                      placeholder="Filtrar por nombre o músculo..."
+                      className="w-full bg-white/5 border border-white/5 rounded-2xl pl-12 pr-6 py-4 outline-none focus:ring-2 focus:ring-primary/20 font-bold text-sm"
+                      value={searchTerm}
+                      onChange={e => setSearchTerm(e.target.value)}
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="flex-1 overflow-y-auto px-8 pb-8 space-y-3 custom-scrollbar no-scrollbar">
@@ -164,6 +203,17 @@ export default function AssignRoutineModal({ isOpen, onClose, clientId, clientNa
                   <div className="flex items-center justify-center py-20">
                     <Loader2 className="animate-spin text-primary" size={32} />
                   </div>
+                ) : showTemplates ? (
+                  templates.map(temp => (
+                    <button
+                      key={temp.id}
+                      onClick={() => handleLoadTemplate(temp)}
+                      className="w-full p-6 bg-white/5 border border-white/5 rounded-[2rem] text-left hover:bg-primary/5 hover:border-primary/20 transition-all group"
+                    >
+                      <h4 className="font-black uppercase italic text-lg tracking-tight group-hover:text-primary transition-colors">{temp.name}</h4>
+                      <p className="text-[10px] font-bold text-foreground/40 uppercase tracking-widest mt-1">{temp.routine_exercises?.length || 0} Ejercicios</p>
+                    </button>
+                  ))
                 ) : (
                   filteredExercises.map(ex => {
                     const isSelected = selectedExercises.some(s => s.exercise_id === ex.id);

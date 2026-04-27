@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { 
   Users, Activity, LayoutDashboard, 
-  Plus, Dumbbell, Settings, ChevronRight, LogOut, Loader2
+  Plus, Dumbbell, Settings, ChevronRight, LogOut, Loader2, Layers, Copy
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createClient } from '@/lib/supabase/client';
@@ -47,6 +47,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const navItems = [
     { name: 'Dashboard', icon: <LayoutDashboard size={20} />, path: '/admin' },
     { name: 'Atletas', icon: <Users size={20} />, path: '/admin/clients' },
+    { name: 'Plantillas', icon: <Layers size={20} />, path: '/admin/routine-templates' },
     { name: 'Rutinas', icon: <Dumbbell size={20} />, path: '/admin/routines' },
     { name: 'Ejercicios', icon: <Activity size={20} />, path: '/admin/exercises' },
   ];
