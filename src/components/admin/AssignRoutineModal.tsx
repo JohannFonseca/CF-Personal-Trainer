@@ -42,6 +42,7 @@ export default function AssignRoutineModal({ isOpen, onClose, clientId, clientNa
   const [saving, setSaving] = useState(false);
   const [existingRoutines, setExistingRoutines] = useState<any[]>([]);
   const [status, setStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
+  const [globalDay, setGlobalDay] = useState<number | null>(new Date().getDay());
 
   useEffect(() => {
     if (isOpen) {
@@ -103,7 +104,7 @@ export default function AssignRoutineModal({ isOpen, onClose, clientId, clientNa
         sets: 3,
         reps: '12',
         rest_time: 60,
-        day_of_week: null
+        day_of_week: globalDay
       }
     ]);
   };
@@ -258,12 +259,39 @@ export default function AssignRoutineModal({ isOpen, onClose, clientId, clientNa
 
             {/* Right Side: Configuration */}
             <div className="w-full md:w-1/2 flex flex-col h-full">
-              <div className="p-8 border-b border-white/5 bg-white/[0.02] flex items-center justify-between sticky top-0 z-10 bg-card md:bg-transparent">
-                <div>
-                  <h2 className="text-2xl font-black tracking-tighter uppercase italic text-primary">Rutina para {clientName.split(' ')[0]}</h2>
-                  <p className="text-[10px] text-foreground/40 font-bold uppercase tracking-widest">{selectedExercises.length} ejercicios seleccionados</p>
+              <div className="p-8 border-b border-white/5 bg-white/[0.02] sticky top-0 z-10 bg-card md:bg-transparent">
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h2 className="text-2xl font-black tracking-tighter uppercase italic text-primary">Plan para {clientName.split(' ')[0]}</h2>
+                    <p className="text-[10px] text-foreground/40 font-bold uppercase tracking-widest">{selectedExercises.length} ejercicios seleccionados</p>
+                  </div>
+                  <button onClick={onClose} className="hidden md:block p-3 bg-white/5 hover:bg-white/10 rounded-2xl transition-all text-foreground/40 hover:text-foreground"><X size={20} /></button>
                 </div>
-                <button onClick={onClose} className="hidden md:block p-3 bg-white/5 hover:bg-white/10 rounded-2xl transition-all text-foreground/40 hover:text-foreground"><X size={20} /></button>
+
+                <div className="bg-primary/10 border border-primary/20 p-4 rounded-2xl flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <Calendar size={18} className="text-primary" />
+                    <span className="text-xs font-black uppercase tracking-widest text-primary">Asignar al día:</span>
+                  </div>
+                  <select 
+                    className="bg-primary text-white text-xs font-black uppercase tracking-widest px-4 py-2 rounded-xl outline-none"
+                    value={globalDay === null ? '' : globalDay}
+                    onChange={e => {
+                      const val = e.target.value === '' ? null : parseInt(e.target.value);
+                      setGlobalDay(val);
+                      setSelectedExercises(selectedExercises.map(ex => ({ ...ex, day_of_week: val })));
+                    }}
+                  >
+                    <option value="">Cualquier día</option>
+                    <option value="1">Lunes</option>
+                    <option value="2">Martes</option>
+                    <option value="3">Miércoles</option>
+                    <option value="4">Jueves</option>
+                    <option value="5">Viernes</option>
+                    <option value="6">Sábado</option>
+                    <option value="0">Domingo</option>
+                  </select>
+                </div>
               </div>
 
               <div className="md:flex-1 overflow-y-visible md:overflow-y-auto p-8 space-y-6 custom-scrollbar no-scrollbar">
@@ -358,26 +386,6 @@ export default function AssignRoutineModal({ isOpen, onClose, clientId, clientNa
                             value={item.rest_time}
                             onChange={e => updateRoutineItem(item.exercise_id, 'rest_time', parseInt(e.target.value))}
                           />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-[9px] font-black uppercase text-foreground/30 ml-2 flex items-center space-x-1">
-                            <Calendar size={10} />
-                            <span>Día</span>
-                          </label>
-                          <select 
-                            className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 font-black text-center text-sm appearance-none outline-none focus:ring-1 focus:ring-primary"
-                            value={item.day_of_week === null ? '' : item.day_of_week}
-                            onChange={e => updateRoutineItem(item.exercise_id, 'day_of_week', e.target.value === '' ? null : parseInt(e.target.value))}
-                          >
-                            <option value="">Cualquier día</option>
-                            <option value="1">Lunes</option>
-                            <option value="2">Martes</option>
-                            <option value="3">Miércoles</option>
-                            <option value="4">Jueves</option>
-                            <option value="5">Viernes</option>
-                            <option value="6">Sábado</option>
-                            <option value="0">Domingo</option>
-                          </select>
                         </div>
                       </div>
                     </motion.div>
