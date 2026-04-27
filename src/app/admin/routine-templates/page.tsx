@@ -236,10 +236,10 @@ export default function RoutineTemplatesPage() {
               initial={{ opacity: 0, scale: 0.9 }} 
               animate={{ opacity: 1, scale: 1 }} 
               exit={{ opacity: 0, scale: 0.9 }} 
-              className="relative w-full max-w-5xl h-[90vh] bg-card border border-white/10 rounded-[3rem] overflow-hidden shadow-2xl flex flex-col md:flex-row"
+              className="relative w-full max-w-5xl h-full md:h-[90vh] bg-card border border-white/10 rounded-[2rem] md:rounded-[3rem] overflow-y-auto md:overflow-hidden shadow-2xl flex flex-col md:flex-row no-scrollbar"
             >
               {/* Left: Exercises */}
-              <div className="w-full md:w-1/2 border-r border-white/5 flex flex-col bg-black/20">
+              <div className="w-full md:w-1/2 border-b md:border-b-0 md:border-r border-white/5 flex flex-col bg-black/20 shrink-0 md:shrink">
                 <div className="p-8 space-y-6">
                   <h2 className="text-2xl font-black uppercase tracking-tighter">Añadir Ejercicios</h2>
                   <div className="relative">
@@ -251,7 +251,7 @@ export default function RoutineTemplatesPage() {
                     />
                   </div>
                 </div>
-                <div className="flex-1 overflow-y-auto px-8 pb-8 space-y-2 no-scrollbar">
+                <div className="md:flex-1 overflow-y-visible md:overflow-y-auto px-8 pb-8 space-y-2 no-scrollbar">
                   {exercises.map(ex => (
                     <button
                       key={ex.id}
@@ -270,12 +270,12 @@ export default function RoutineTemplatesPage() {
 
               {/* Right: Template Form */}
               <div className="w-full md:w-1/2 flex flex-col h-full">
-                <div className="p-8 border-b border-white/5 flex items-center justify-between">
+                <div className="p-8 border-b border-white/5 flex items-center justify-between bg-card md:bg-transparent sticky top-0 z-10">
                   <h2 className="text-2xl font-black uppercase tracking-tighter italic text-primary">Detalles de Plantilla</h2>
                   <button onClick={() => setShowModal(false)} className="p-3 bg-white/5 rounded-2xl text-foreground/40 hover:text-foreground"><X size={20} /></button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-8 space-y-6 no-scrollbar">
+                <div className="md:flex-1 overflow-y-visible md:overflow-y-auto p-8 space-y-6 no-scrollbar">
                   <div className="space-y-4">
                     <input 
                       placeholder="Nombre de la rutina (ej: Empuje A)"

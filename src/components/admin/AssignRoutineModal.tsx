@@ -158,10 +158,10 @@ export default function AssignRoutineModal({ isOpen, onClose, clientId, clientNa
             initial={{ opacity: 0, scale: 0.9, y: 40 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 40 }}
-            className="relative w-full max-w-5xl h-[90vh] md:h-[85vh] bg-card border border-white/10 rounded-[2rem] md:rounded-[3rem] overflow-hidden shadow-2xl flex flex-col md:flex-row"
+            className="relative w-full max-w-5xl h-full md:h-[85vh] bg-card border border-white/10 rounded-[2rem] md:rounded-[3rem] overflow-y-auto md:overflow-hidden shadow-2xl flex flex-col md:flex-row no-scrollbar"
           >
             {/* Left Side: Exercise Selection */}
-            <div className="w-full md:w-1/2 border-r border-white/5 flex flex-col h-full bg-black/20">
+            <div className="w-full md:w-1/2 border-b md:border-b-0 md:border-r border-white/5 flex flex-col h-full bg-black/20 shrink-0 md:shrink">
               <div className="p-8 space-y-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -198,7 +198,7 @@ export default function AssignRoutineModal({ isOpen, onClose, clientId, clientNa
                 )}
               </div>
 
-              <div className="flex-1 overflow-y-auto px-8 pb-8 space-y-3 custom-scrollbar no-scrollbar">
+              <div className="md:flex-1 overflow-y-visible md:overflow-y-auto px-8 pb-8 space-y-3 custom-scrollbar no-scrollbar">
                 {loading ? (
                   <div className="flex items-center justify-center py-20">
                     <Loader2 className="animate-spin text-primary" size={32} />
@@ -246,7 +246,7 @@ export default function AssignRoutineModal({ isOpen, onClose, clientId, clientNa
 
             {/* Right Side: Configuration */}
             <div className="w-full md:w-1/2 flex flex-col h-full">
-              <div className="p-8 border-b border-white/5 bg-white/[0.02] flex items-center justify-between">
+              <div className="p-8 border-b border-white/5 bg-white/[0.02] flex items-center justify-between sticky top-0 z-10 bg-card md:bg-transparent">
                 <div>
                   <h2 className="text-2xl font-black tracking-tighter uppercase italic text-primary">Rutina para {clientName.split(' ')[0]}</h2>
                   <p className="text-[10px] text-foreground/40 font-bold uppercase tracking-widest">{selectedExercises.length} ejercicios seleccionados</p>
@@ -254,7 +254,7 @@ export default function AssignRoutineModal({ isOpen, onClose, clientId, clientNa
                 <button onClick={onClose} className="hidden md:block p-3 bg-white/5 hover:bg-white/10 rounded-2xl transition-all text-foreground/40 hover:text-foreground"><X size={20} /></button>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-8 space-y-6 custom-scrollbar no-scrollbar">
+              <div className="md:flex-1 overflow-y-visible md:overflow-y-auto p-8 space-y-6 custom-scrollbar no-scrollbar">
                 {status && (
                   <motion.div 
                     initial={{ opacity: 0, y: -10 }}
