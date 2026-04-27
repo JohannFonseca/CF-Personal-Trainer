@@ -26,6 +26,24 @@ export default function WorkoutsPage() {
   const [profile, setProfile] = useState<any>(null);
   const [routines, setRoutines] = useState<RoutineEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [completing, setCompleting] = useState<string | null>(null);
+  const [completedToday, setCompletedToday] = useState<string[]>([]);
+  const [isWorkoutActive, setIsWorkoutActive] = useState(false);
+  const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const [finishing, setFinishing] = useState(false);
+
+  useEffect(() => {
+    let interval: any;
+    if (isWorkoutActive && sessionStartTime) {
+      interval = setInterval(() => {
+        const now = new Date();
+        const diff = Math.floor((now.getTime() - sessionStartTime.getTime()) / 1000);
+        setElapsedTime(diff);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isWorkoutActive, sessionStartTime]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -41,16 +59,109 @@ export default function WorkoutsPage() {
 
       const { data: routinesData } = await supabase
         .from('client_routines')
-        .select('*, exercises(name, muscle_group, media_url)')
+        .select('*, exercises(id, name, muscle_group, media_url)')
         .eq('client_id', user.id)
         .order('created_at', { ascending: true });
 
+      // Fetch today's completions
+      const today = new Date().toISOString().split('T')[0];
+      const { data: completions } = await supabase
+        .from('workout_logs')
+        .select('exercise_id')
+        .eq('client_id', user.id)
+        .gte('completed_at', today);
+
+      // Check if there's an active session
+      const { data: activeSession } = await supabase
+        .from('workout_sessions')
+        .select('*')
+        .eq('client_id', user.id)
+        .is('finished_at', null)
+        .order('started_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (activeSession) {
+        setIsWorkoutActive(true);
+        setSessionStartTime(new Date(activeSession.started_at));
+      }
+
       setProfile(profileData);
       setRoutines(routinesData || []);
+      setCompletedToday(completions?.map(c => c.exercise_id) || []);
       setLoading(false);
     };
     fetchData();
   }, []);
+
+  const handleStartWorkout = async () => {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const startTime = new Date();
+    const { error } = await supabase.from('workout_sessions').insert({
+      client_id: user.id,
+      started_at: startTime.toISOString()
+    });
+
+    if (!error) {
+      setIsWorkoutActive(true);
+      setSessionStartTime(startTime);
+    }
+  };
+
+  const handleFinishWorkout = async () => {
+    setFinishing(true);
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user || !sessionStartTime) return;
+
+    const finishTime = new Date();
+    const duration = Math.floor((finishTime.getTime() - sessionStartTime.getTime()) / (1000 * 60));
+
+    await supabase.from('workout_sessions')
+      .update({ 
+        finished_at: finishTime.toISOString(),
+        duration_minutes: duration 
+      })
+      .eq('client_id', user.id)
+      .is('finished_at', null);
+
+    setIsWorkoutActive(false);
+    setSessionStartTime(null);
+    setElapsedTime(0);
+    setFinishing(false);
+    alert('¡Excelente trabajo! Entrenamiento finalizado.');
+  };
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const handleComplete = async (exerciseId: string) => {
+    if (!isWorkoutActive) {
+      alert('Inicia el entrenamiento primero para marcar ejercicios.');
+      return;
+    }
+
+    setCompleting(exerciseId);
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { error } = await supabase.from('workout_logs').insert({
+      client_id: user.id,
+      exercise_id: exerciseId
+    });
+
+    if (!error) {
+      setCompletedToday([...completedToday, exerciseId]);
+    }
+    setCompleting(null);
+  };
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center">
@@ -61,18 +172,59 @@ export default function WorkoutsPage() {
   const firstName = profile?.full_name?.split(' ')[0]?.toUpperCase() || 'CAMPEÓN';
 
   return (
-    <div className="p-6 space-y-10 pb-12">
+    <div className="p-6 space-y-10 pb-32">
       {/* Welcome Header */}
-      <header className="space-y-1">
-        <h2 className="text-3xl font-black tracking-tighter">HOLA, {firstName}.</h2>
-        <p className="text-foreground/40 font-bold text-xs uppercase tracking-widest flex items-center">
-          <Trophy size={14} className="mr-2 text-yellow-500" />
-          {routines.length} ejercicios en tu plan
-        </p>
+      <header className="flex justify-between items-start">
+        <div className="space-y-1">
+          <h2 className="text-3xl font-black tracking-tighter">HOLA, {firstName}.</h2>
+          <p className="text-foreground/40 font-bold text-xs uppercase tracking-widest flex items-center">
+            <Trophy size={14} className="mr-2 text-yellow-500" />
+            {routines.length} ejercicios en tu plan
+          </p>
+        </div>
+        
+        {isWorkoutActive && (
+          <div className="bg-primary/10 px-4 py-2 rounded-2xl border border-primary/20 flex items-center space-x-3">
+            <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+            <span className="text-xl font-black font-mono tracking-tighter text-primary">
+              {formatTime(elapsedTime)}
+            </span>
+          </div>
+        )}
       </header>
 
+      {/* Action Area */}
+      {!isWorkoutActive ? (
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-primary p-1 rounded-3xl"
+        >
+          <button 
+            onClick={handleStartWorkout}
+            className="w-full py-6 bg-primary text-white rounded-[1.4rem] font-black text-xl tracking-tighter uppercase shadow-2xl shadow-primary/40 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center space-x-3"
+          >
+            <Play size={24} fill="currentColor" />
+            <span>Iniciar Entrenamiento</span>
+          </button>
+        </motion.div>
+      ) : (
+        <div className="bg-white/5 p-6 rounded-3xl border border-white/10 flex items-center justify-between">
+          <div>
+            <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">Entrenamiento en curso</p>
+            <h3 className="text-lg font-black italic">¡Dale con todo!</h3>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="text-right mr-4">
+              <p className="text-[10px] font-black text-foreground/30 uppercase tracking-widest">Progreso</p>
+              <p className="text-lg font-black">{completedToday.length}/{routines.length}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Goals Card */}
-      {profile?.goals && (
+      {!isWorkoutActive && profile?.goals && (
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -107,7 +259,9 @@ export default function WorkoutsPage() {
       {/* Assigned Routines List */}
       <section className="space-y-6">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-black tracking-tight uppercase">Tu Rutina</h3>
+          <h3 className="text-lg font-black tracking-tight uppercase">
+            {isWorkoutActive ? 'Ejercicios de hoy' : 'Tu Rutina'}
+          </h3>
           <span className="text-[10px] font-black text-foreground/30 uppercase tracking-widest">{routines.length} ejercicios</span>
         </div>
 
@@ -119,49 +273,92 @@ export default function WorkoutsPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            {routines.map((routine, i) => (
-              <motion.div
-                key={routine.id}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.05 }}
-                className="group glass-card p-6 border border-white/5 hover:bg-white/[0.03] transition-all"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-black text-sm">
-                      {i + 1}
+            {routines.map((routine, i) => {
+              const isCompleted = completedToday.includes(routine.exercise_id);
+              return (
+                <motion.div
+                  key={routine.id}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.05 }}
+                  className={`group glass-card p-6 border transition-all ${
+                    isCompleted 
+                    ? 'border-green-500/20 bg-green-500/5 opacity-60 scale-[0.98]' 
+                    : isWorkoutActive ? 'border-primary/20 bg-primary/[0.02]' : 'border-white/5 hover:bg-white/[0.03]'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm ${
+                        isCompleted ? 'bg-green-500 text-white' : 'bg-primary/10 text-primary'
+                      }`}>
+                        {isCompleted ? <CheckCircle2 size={18} /> : i + 1}
+                      </div>
+                      <div>
+                        <h4 className="font-black uppercase tracking-tight">{routine.exercises?.name}</h4>
+                        <span className="text-[9px] font-black bg-primary/10 text-primary px-2 py-0.5 rounded-full uppercase">
+                          {routine.exercises?.muscle_group}
+                        </span>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="font-black uppercase tracking-tight">{routine.exercises?.name}</h4>
-                      <span className="text-[9px] font-black bg-primary/10 text-primary px-2 py-0.5 rounded-full uppercase">
-                        {routine.exercises?.muscle_group}
-                      </span>
-                    </div>
-                  </div>
-                </div>
 
-                <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-white/5">
-                  <div className="text-center">
-                    <p className="text-[9px] font-black text-foreground/20 uppercase tracking-widest mb-1">Series</p>
-                    <p className="text-xl font-black italic">{routine.sets}</p>
+                    {!isCompleted && isWorkoutActive && (
+                      <button
+                        onClick={() => handleComplete(routine.exercise_id)}
+                        disabled={completing === routine.exercise_id}
+                        className="p-3 bg-primary text-white rounded-xl shadow-lg shadow-primary/20 hover:scale-110 active:scale-90 transition-all disabled:opacity-50"
+                      >
+                        {completing === routine.exercise_id ? (
+                          <Loader2 size={18} className="animate-spin" />
+                        ) : (
+                          <CheckCircle2 size={18} />
+                        )}
+                      </button>
+                    )}
                   </div>
-                  <div className="text-center">
-                    <p className="text-[9px] font-black text-foreground/20 uppercase tracking-widest mb-1">Reps</p>
-                    <p className="text-xl font-black italic">{routine.reps}</p>
+
+                  <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-white/5">
+                    <div className="text-center">
+                      <p className="text-[9px] font-black text-foreground/20 uppercase tracking-widest mb-1">Series</p>
+                      <p className="text-xl font-black italic">{routine.sets}</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-[9px] font-black text-foreground/20 uppercase tracking-widest mb-1">Reps</p>
+                      <p className="text-xl font-black italic">{routine.reps}</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-[9px] font-black text-foreground/20 uppercase tracking-widest mb-1 flex items-center justify-center gap-1">
+                        <Clock size={9} />Descanso
+                      </p>
+                      <p className="text-xl font-black italic">{routine.rest_time}s</p>
+                    </div>
                   </div>
-                  <div className="text-center">
-                    <p className="text-[9px] font-black text-foreground/20 uppercase tracking-widest mb-1 flex items-center justify-center gap-1">
-                      <Clock size={9} />Descanso
-                    </p>
-                    <p className="text-xl font-black italic">{routine.rest_time}s</p>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
+                </motion.div>
+              );
+            })}
           </div>
         )}
       </section>
+
+      {/* Floating Finish Button */}
+      {isWorkoutActive && (
+        <div className="fixed bottom-24 left-6 right-6 z-50">
+          <button
+            onClick={handleFinishWorkout}
+            disabled={finishing}
+            className="w-full py-5 bg-green-500 text-white rounded-2xl font-black text-lg shadow-2xl shadow-green-500/40 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center space-x-3"
+          >
+            {finishing ? (
+              <Loader2 size={24} className="animate-spin" />
+            ) : (
+              <>
+                <CheckCircle2 size={24} />
+                <span>FINALIZAR ENTRENAMIENTO</span>
+              </>
+            )}
+          </button>
+        </div>
+      )}
 
       {/* Motivational Quote */}
       <footer className="py-12 text-center space-y-4">

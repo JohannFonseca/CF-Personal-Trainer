@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { motion } from 'framer-motion';
-import { History, Calendar, CheckCircle2, Clock, Loader2, Dumbbell } from 'lucide-react';
+import { History, Calendar, CheckCircle2, Clock, Loader2, Dumbbell, Trophy } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function ActivityPage() {
@@ -17,16 +17,26 @@ export default function ActivityPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push('/login'); return; }
 
-      // For now, let's fetch completed routines (if we had a completions table)
-      // Since we don't have a completions table yet, let's show assignments as "Recent Activity"
-      // In a real app, we'd have a 'workout_logs' table.
-      const { data } = await supabase
-        .from('client_routines')
+      const { data: logs } = await supabase
+        .from('workout_logs')
         .select('*, exercises(name)')
         .eq('client_id', user.id)
-        .order('created_at', { ascending: false });
+        .order('completed_at', { ascending: false });
 
-      setActivities(data || []);
+      const { data: sessions } = await supabase
+        .from('workout_sessions')
+        .select('*')
+        .eq('client_id', user.id)
+        .not('finished_at', 'is', null)
+        .order('finished_at', { ascending: false });
+
+      // Merge and sort by date
+      const merged = [
+        ...(logs || []).map(l => ({ ...l, type: 'exercise', date: l.completed_at })),
+        ...(sessions || []).map(s => ({ ...s, type: 'session', date: s.finished_at }))
+      ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+      setActivities(merged);
       setLoading(false);
     };
     fetchActivity();
@@ -53,35 +63,57 @@ export default function ActivityPage() {
             <p className="text-foreground/40 text-sm max-w-[200px] mx-auto">Tus entrenamientos completados aparecerán aquí.</p>
           </div>
         ) : (
-          activities.map((activity, i) => (
-            <motion.div
-              key={activity.id}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: i * 0.05 }}
-              className="glass-card p-6 border border-white/5 flex items-center justify-between"
-            >
-              <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 bg-green-500/10 rounded-2xl flex items-center justify-center text-green-500">
-                  <CheckCircle2 size={24} />
-                </div>
-                <div>
-                  <h4 className="font-black uppercase tracking-tight">{activity.exercises?.name}</h4>
-                  <div className="flex items-center space-x-2 text-[10px] font-bold text-foreground/30 uppercase tracking-widest mt-1">
-                    <Calendar size={12} />
-                    <span>{new Date(activity.created_at).toLocaleDateString()}</span>
+          activities.map((activity, i) => {
+            const isSession = activity.type === 'session';
+            return (
+              <motion.div
+                key={activity.id}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.05 }}
+                className={`glass-card p-6 border flex items-center justify-between ${
+                  isSession ? 'bg-primary/10 border-primary/20' : 'border-white/5'
+                }`}
+              >
+                <div className="flex items-center space-x-4">
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${
+                    isSession ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-green-500/10 text-green-500'
+                  }`}>
+                    {isSession ? <Trophy size={24} /> : <CheckCircle2 size={24} />}
+                  </div>
+                  <div>
+                    <h4 className="font-black uppercase tracking-tight">
+                      {isSession ? 'Sesión de Entrenamiento' : activity.exercises?.name}
+                    </h4>
+                    <div className="flex items-center space-x-2 text-[10px] font-bold text-foreground/30 uppercase tracking-widest mt-1">
+                      <Calendar size={12} />
+                      <span>{new Date(activity.date).toLocaleDateString()}</span>
+                      {isSession && (
+                        <>
+                          <span className="mx-1">•</span>
+                          <Clock size={12} />
+                          <span>{activity.duration_minutes} min</span>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className="text-right">
-                <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Completado</p>
-                <div className="flex items-center justify-end space-x-1 text-foreground/40 mt-1">
-                  <Clock size={10} />
-                  <span className="text-[10px] font-bold">12:45 PM</span>
+                <div className="text-right">
+                  <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${
+                    isSession ? 'text-primary' : 'text-green-500'
+                  }`}>
+                    {isSession ? 'Finalizado' : 'Completado'}
+                  </p>
+                  <div className="flex items-center justify-end space-x-1 text-foreground/40 mt-1">
+                    <Clock size={10} />
+                    <span className="text-[10px] font-bold">
+                      {new Date(activity.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            </motion.div>
-          ))
+              </motion.div>
+            );
+          })
         )}
       </div>
     </div>

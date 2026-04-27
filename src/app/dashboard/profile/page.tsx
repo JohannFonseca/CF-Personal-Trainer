@@ -39,6 +39,15 @@ export default function ProfilePage() {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
+
+    // Check if weight changed to log it
+    if (formData.weight !== profile.weight) {
+      await supabase.from('weight_logs').insert({
+        client_id: user.id,
+        weight: parseFloat(formData.weight)
+      });
+    }
+
     await supabase.from('profiles').update(formData).eq('id', user.id);
     setProfile({ ...profile, ...formData });
     setEditing(false);
