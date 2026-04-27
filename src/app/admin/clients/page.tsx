@@ -8,6 +8,8 @@ import {
   Weight, Move, Calendar, Clock
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import AssignRoutineModal from '@/components/admin/AssignRoutineModal';
+
 
 type Profile = {
   id: string;
@@ -26,6 +28,9 @@ export default function ClientsPage() {
   const [clients, setClients] = useState<Profile[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClient, setSelectedClient] = useState<Profile | null>(null);
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+  const [clientRoutines, setClientRoutines] = useState<any[]>([]);
+
 
   useEffect(() => {
     const fetchClients = async () => {
@@ -35,6 +40,23 @@ export default function ClientsPage() {
     };
     fetchClients();
   }, []);
+
+  useEffect(() => {
+    if (selectedClient) {
+      const fetchClientRoutines = async () => {
+        const { data } = await supabase
+          .from('client_routines')
+          .select('*, exercises(name, muscle_group)')
+          .eq('client_id', selectedClient.id)
+          .order('created_at', { ascending: false });
+        setClientRoutines(data || []);
+      };
+      fetchClientRoutines();
+    } else {
+      setClientRoutines([]);
+    }
+  }, [selectedClient, isAssignModalOpen]);
+
 
   const filteredClients = clients.filter(c => 
     (c.full_name || '').toLowerCase().includes(searchTerm.toLowerCase())
@@ -156,8 +178,14 @@ export default function ClientsPage() {
                     <p className="text-primary font-bold uppercase tracking-[0.3em] text-xs mt-2">Atleta de Alto Rendimiento</p>
                   </div>
                   <div className="flex gap-2">
-                    <button className="bg-primary text-white px-8 py-4 rounded-2xl font-black text-sm shadow-xl shadow-primary/20">ASIGNAR RUTINA</button>
+                    <button 
+                      onClick={() => setIsAssignModalOpen(true)}
+                      className="bg-primary text-white px-8 py-4 rounded-2xl font-black text-sm shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
+                    >
+                      ASIGNAR RUTINA
+                    </button>
                   </div>
+
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
@@ -186,11 +214,52 @@ export default function ClientsPage() {
                     "{selectedClient.goals || 'Sin metas definidas todavía.'}"
                   </p>
                 </div>
+
+                {/* Routine Summary */}
+                <div className="mt-10">
+                  <div className="flex items-center justify-between mb-6">
+                    <h4 className="text-xl font-black tracking-tight uppercase italic">Rutina Actual</h4>
+                    <span className="text-[10px] font-black bg-primary/10 text-primary px-3 py-1 rounded-full">{clientRoutines.length} Ejercicios</span>
+                  </div>
+                  
+                  {clientRoutines.length === 0 ? (
+                    <div className="bg-white/5 border border-dashed border-white/10 rounded-3xl p-8 text-center">
+                      <p className="text-xs font-bold text-foreground/30 uppercase tracking-widest">No hay rutina asignada</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {clientRoutines.map((r, i) => (
+                        <div key={r.id} className="bg-white/5 border border-white/5 rounded-2xl p-4 flex items-center justify-between">
+                          <div className="flex items-center space-x-4">
+                            <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary font-black text-xs">{i+1}</div>
+                            <div>
+                              <p className="font-bold text-sm uppercase">{r.exercises?.name}</p>
+                              <p className="text-[9px] font-black text-foreground/30 uppercase">{r.sets} SERIES x {r.reps} REPS</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-[9px] font-black text-primary uppercase">{r.rest_time}s DESC.</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
+
+      {selectedClient && (
+        <AssignRoutineModal 
+          isOpen={isAssignModalOpen}
+          onClose={() => setIsAssignModalOpen(false)}
+          clientId={selectedClient.id}
+          clientName={selectedClient.full_name || 'Atleta'}
+        />
+      )}
     </div>
+
   );
 }

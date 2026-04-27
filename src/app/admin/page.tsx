@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { 
   Users, Activity, TrendingUp, Calendar, 
   ChevronRight, Dumbbell, PlayCircle, Clock, Loader2, AlertCircle
@@ -14,12 +15,23 @@ export default function AdminDashboard() {
     exercises: 0,
     pending: 0
   });
+  const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchStats = async () => {
+    const fetchData = async () => {
       const supabase = createClient();
       
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', user.id)
+          .single();
+        setProfile(profileData);
+      }
+
       // 1. Total Atletas
       const { count: clientCount } = await supabase
         .from('profiles')
@@ -31,8 +43,7 @@ export default function AdminDashboard() {
         .from('exercises')
         .select('*', { count: 'exact', head: true });
 
-      // 3. Pendientes de Rutina (Atletas que no están en client_routines)
-      // Nota: Esto es una simplificación, en un sistema real haríamos un JOIN o RPC
+      // 3. Pendientes de Rutina
       const { data: allClients } = await supabase.from('profiles').select('id').eq('role', 'client');
       const { data: assigned } = await supabase.from('client_routines').select('client_id');
       
@@ -46,7 +57,7 @@ export default function AdminDashboard() {
       });
       setLoading(false);
     };
-    fetchStats();
+    fetchData();
   }, []);
 
   if (loading) return (
@@ -55,41 +66,43 @@ export default function AdminDashboard() {
     </div>
   );
 
+  const coachName = profile?.full_name?.split(' ')[0] || 'Coach';
+
   return (
     <div className="p-6 lg:p-12 space-y-12">
       <header className="flex flex-col space-y-2">
         <p className="text-[10px] font-black uppercase tracking-[0.4em] text-primary">SISTEMA DE GESTIÓN</p>
-        <h1 className="text-4xl lg:text-6xl font-black tracking-tighter uppercase">Hola, Coach.</h1>
+        <h1 className="text-4xl lg:text-6xl font-black tracking-tighter uppercase text-balance transition-all">Hola, {coachName}.</h1>
       </header>
 
       {/* Stats Realistas */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="glass-card p-8 bg-primary/5 border-primary/20">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-8 bg-primary/5 border-primary/20">
           <div className="flex justify-between items-start mb-6">
             <Users className="text-primary" size={24} />
             <span className="text-[10px] font-black text-primary/40 uppercase tracking-widest">Total</span>
           </div>
           <h3 className="text-5xl font-black tracking-tighter mb-1">{stats.clients}</h3>
           <p className="text-xs font-bold text-foreground/30 uppercase tracking-widest">Atletas Atendidos</p>
-        </div>
+        </motion.div>
 
-        <div className="glass-card p-8">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-card p-8">
           <div className="flex justify-between items-start mb-6">
             <Dumbbell className="text-blue-400" size={24} />
             <span className="text-[10px] font-black text-blue-400/40 uppercase tracking-widest">Contenido</span>
           </div>
           <h3 className="text-5xl font-black tracking-tighter mb-1">{stats.exercises}</h3>
           <p className="text-xs font-bold text-foreground/30 uppercase tracking-widest">Ejercicios Disponibles</p>
-        </div>
+        </motion.div>
 
-        <div className={`glass-card p-8 border-dashed transition-colors ${stats.pending > 0 ? 'bg-orange-500/5 border-orange-500/30' : 'bg-green-500/5 border-green-500/30'}`}>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className={`glass-card p-8 border-dashed transition-colors ${stats.pending > 0 ? 'bg-orange-500/5 border-orange-500/30' : 'bg-green-500/5 border-green-500/30'}`}>
           <div className="flex justify-between items-start mb-6">
             <AlertCircle className={stats.pending > 0 ? 'text-orange-500' : 'text-green-500'} size={24} />
             <span className={`text-[10px] font-black uppercase tracking-widest ${stats.pending > 0 ? 'text-orange-500/40' : 'text-green-500/40'}`}>Atención</span>
           </div>
           <h3 className={`text-5xl font-black tracking-tighter mb-1 ${stats.pending > 0 ? 'text-orange-500' : 'text-green-500'}`}>{stats.pending}</h3>
           <p className="text-xs font-bold text-foreground/30 uppercase tracking-widest">Sin Rutina Asignada</p>
-        </div>
+        </motion.div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
@@ -118,13 +131,13 @@ export default function AdminDashboard() {
               </div>
             )}
             
-            <button onClick={() => window.location.href = '/admin/clients'} className="w-full flex items-center justify-between p-6 bg-white/5 hover:bg-white/10 rounded-3xl transition-all border border-white/5">
+            <Link href="/admin/clients" className="w-full flex items-center justify-between p-6 bg-white/5 hover:bg-white/10 rounded-3xl transition-all border border-white/5 group">
               <div className="flex items-center space-x-4">
-                <Users size={20} className="text-foreground/40" />
+                <Users size={20} className="text-foreground/40 group-hover:text-primary transition-colors" />
                 <span className="font-bold uppercase text-sm tracking-tight">Ir a lista de Atletas</span>
               </div>
-              <ChevronRight size={18} className="text-foreground/20" />
-            </button>
+              <ChevronRight size={18} className="text-foreground/20 group-hover:translate-x-1 transition-all" />
+            </Link>
           </div>
         </section>
 
@@ -143,9 +156,9 @@ export default function AdminDashboard() {
             <p className="text-xs text-foreground/40 font-medium leading-relaxed mb-6">
               Mantén tu biblioteca actualizada con videos de buena calidad para que tus alumnos no tengan dudas sobre la técnica.
             </p>
-            <button onClick={() => window.location.href = '/admin/exercises'} className="w-full py-4 bg-blue-500 text-white rounded-2xl font-black text-sm shadow-xl shadow-blue-500/20 hover:scale-[1.02] active:scale-95 transition-all uppercase tracking-widest">
+            <Link href="/admin/exercises" className="block w-full text-center py-4 bg-blue-500 text-white rounded-2xl font-black text-sm shadow-xl shadow-blue-500/20 hover:scale-[1.02] active:scale-95 transition-all uppercase tracking-widest">
               Gestionar Ejercicios
-            </button>
+            </Link>
           </div>
         </section>
       </div>
