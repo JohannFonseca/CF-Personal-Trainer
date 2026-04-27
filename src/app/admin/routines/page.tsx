@@ -15,6 +15,8 @@ type RoutineWithInfo = {
   exercise_id: string;
   sets: number;
   reps: string;
+  rest_time: number;
+  day_of_week: number | null;
   assigned_date: string;
   profiles: { full_name: string };
   exercises: { name: string, muscle_group: string };
