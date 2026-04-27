@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Play, Clock, Dumbbell, 
   CheckCircle2, Trophy, Flame, Hash, Activity, Loader2
@@ -32,6 +32,7 @@ export default function WorkoutsPage() {
   const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [finishing, setFinishing] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   useEffect(() => {
     let interval: any;
@@ -132,7 +133,10 @@ export default function WorkoutsPage() {
     setSessionStartTime(null);
     setElapsedTime(0);
     setFinishing(false);
-    alert('¡Excelente trabajo! Entrenamiento finalizado.');
+    setShowSuccess(true);
+    
+    // Auto-hide success message after 4 seconds
+    setTimeout(() => setShowSuccess(false), 4000);
   };
 
   const formatTime = (seconds: number) => {
@@ -341,24 +345,31 @@ export default function WorkoutsPage() {
       </section>
 
       {/* Floating Finish Button */}
-      {isWorkoutActive && (
-        <div className="fixed bottom-24 left-6 right-6 z-50">
-          <button
-            onClick={handleFinishWorkout}
-            disabled={finishing}
-            className="w-full py-5 bg-green-500 text-white rounded-2xl font-black text-lg shadow-2xl shadow-green-500/40 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center space-x-3"
+      <AnimatePresence>
+        {isWorkoutActive && (
+          <motion.div 
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+            className="fixed bottom-24 left-6 right-6 z-50"
           >
-            {finishing ? (
-              <Loader2 size={24} className="animate-spin" />
-            ) : (
-              <>
-                <CheckCircle2 size={24} />
-                <span>FINALIZAR ENTRENAMIENTO</span>
-              </>
-            )}
-          </button>
-        </div>
-      )}
+            <button
+              onClick={handleFinishWorkout}
+              disabled={finishing}
+              className="w-full py-5 bg-green-500 text-white rounded-2xl font-black text-lg shadow-2xl shadow-green-500/40 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center space-x-3"
+            >
+              {finishing ? (
+                <Loader2 size={24} className="animate-spin" />
+              ) : (
+                <>
+                  <CheckCircle2 size={24} />
+                  <span>FINALIZAR ENTRENAMIENTO</span>
+                </>
+              )}
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Motivational Quote */}
       <footer className="py-12 text-center space-y-4">
@@ -367,6 +378,38 @@ export default function WorkoutsPage() {
           "El único entrenamiento malo es el que no sucedió."
         </p>
       </footer>
+
+      {/* Success Overlay */}
+      <AnimatePresence>
+        {showSuccess && (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-background/80 backdrop-blur-sm"
+          >
+            <motion.div 
+              className="glass-card p-12 border-primary/50 bg-primary/10 text-center space-y-6 max-w-sm w-full"
+              initial={{ y: 20 }}
+              animate={{ y: 0 }}
+            >
+              <div className="w-24 h-24 bg-primary rounded-full flex items-center justify-center mx-auto shadow-2xl shadow-primary/40">
+                <Trophy size={48} className="text-white" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-3xl font-black italic tracking-tighter uppercase">¡BRUTAL!</h3>
+                <p className="text-foreground/60 font-bold uppercase tracking-widest text-xs">Entrenamiento finalizado con éxito</p>
+              </div>
+              <button 
+                onClick={() => setShowSuccess(false)}
+                className="w-full py-4 bg-primary text-white rounded-2xl font-black uppercase tracking-widest text-sm"
+              >
+                ACEPTAR
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

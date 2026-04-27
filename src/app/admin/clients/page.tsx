@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { 
   Users, UserCircle, Search, Filter, 
-  ChevronRight, Target, Activity, Loader2, X,
+  ChevronRight, Target, Activity, Loader2, X, Trash2,
   Weight, Move, Calendar, Clock
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -61,6 +61,21 @@ export default function ClientsPage() {
   const filteredClients = clients.filter(c => 
     (c.full_name || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const handleDeleteRoutine = async (routineId: string) => {
+    if (confirm('¿Eliminar este ejercicio de la rutina?')) {
+      const { error } = await supabase.from('client_routines').delete().eq('id', routineId);
+      if (!error && selectedClient) {
+        // Refresh routines
+        const { data } = await supabase
+          .from('client_routines')
+          .select('*, exercises(name, muscle_group)')
+          .eq('client_id', selectedClient.id)
+          .order('created_at', { ascending: false });
+        setClientRoutines(data || []);
+      }
+    }
+  };
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center">
@@ -229,7 +244,7 @@ export default function ClientsPage() {
                   ) : (
                     <div className="space-y-3">
                       {clientRoutines.map((r, i) => (
-                        <div key={r.id} className="bg-white/5 border border-white/5 rounded-2xl p-4 flex items-center justify-between">
+                        <div key={r.id} className="bg-white/5 border border-white/5 rounded-2xl p-4 flex items-center justify-between group/item">
                           <div className="flex items-center space-x-4">
                             <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary font-black text-xs">{i+1}</div>
                             <div>
@@ -237,8 +252,16 @@ export default function ClientsPage() {
                               <p className="text-[9px] font-black text-foreground/30 uppercase">{r.sets} SERIES x {r.reps} REPS</p>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <p className="text-[9px] font-black text-primary uppercase">{r.rest_time}s DESC.</p>
+                          <div className="flex items-center space-x-4">
+                            <div className="text-right hidden sm:block">
+                              <p className="text-[9px] font-black text-primary uppercase">{r.rest_time}s DESC.</p>
+                            </div>
+                            <button 
+                              onClick={() => handleDeleteRoutine(r.id)}
+                              className="p-2 text-foreground/10 hover:text-red-500 transition-colors opacity-0 group-hover/item:opacity-100"
+                            >
+                              <Trash2 size={16} />
+                            </button>
                           </div>
                         </div>
                       ))}
