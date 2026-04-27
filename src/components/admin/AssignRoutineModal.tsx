@@ -158,7 +158,7 @@ export default function AssignRoutineModal({ isOpen, onClose, clientId, clientNa
             initial={{ opacity: 0, scale: 0.9, y: 40 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 40 }}
-            className="relative w-full max-w-5xl h-[85vh] bg-card border border-white/10 rounded-[3rem] overflow-hidden shadow-2xl flex flex-col md:flex-row"
+            className="relative w-full max-w-5xl h-[90vh] md:h-[85vh] bg-card border border-white/10 rounded-[2rem] md:rounded-[3rem] overflow-hidden shadow-2xl flex flex-col md:flex-row"
           >
             {/* Left Side: Exercise Selection */}
             <div className="w-full md:w-1/2 border-r border-white/5 flex flex-col h-full bg-black/20">

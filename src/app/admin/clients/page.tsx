@@ -157,7 +157,7 @@ export default function ClientsPage() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-2xl bg-card border border-white/10 rounded-[3rem] overflow-hidden shadow-2xl"
+              className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto no-scrollbar bg-card border border-white/10 rounded-[2rem] md:rounded-[3rem] shadow-2xl"
             >
               <div className="h-40 bg-gradient-to-r from-primary to-blue-600 relative">
                 <button onClick={() => setSelectedClient(null)} className="absolute top-6 right-6 p-3 bg-black/20 hover:bg-black/40 text-white rounded-2xl backdrop-blur-md transition-all"><X size={20} /></button>
@@ -174,8 +174,8 @@ export default function ClientsPage() {
 
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
                   <div>
-                    <h3 className="text-4xl font-black tracking-tighter">{selectedClient.full_name}</h3>
-                    <p className="text-primary font-bold uppercase tracking-[0.3em] text-xs mt-2">Atleta de Alto Rendimiento</p>
+                    <h3 className="text-3xl md:text-4xl font-black tracking-tighter">{selectedClient.full_name}</h3>
+                    <p className="text-primary font-bold uppercase tracking-[0.3em] text-[10px] md:text-xs mt-2">Atleta de Alto Rendimiento</p>
                   </div>
                   <div className="flex gap-2">
                     <button 
