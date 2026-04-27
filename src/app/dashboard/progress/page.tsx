@@ -51,9 +51,10 @@ export default function ProgressPage() {
     </div>
   );
 
-  const weightChange = weightHistory.length > 1 
-    ? (weightHistory[weightHistory.length - 1].weight - weightHistory[0].weight).toFixed(1)
+  const weightChangeValue = weightHistory.length > 1 
+    ? (weightHistory[weightHistory.length - 1].weight - weightHistory[0].weight)
     : 0;
+  const weightChange = weightChangeValue.toFixed(1);
 
   return (
     <div className="p-6 pb-12 space-y-10">
@@ -80,10 +81,10 @@ export default function ProgressPage() {
             <span className="text-xl font-black text-foreground/20 italic mb-1">KG</span>
           </div>
           <p className="text-xs font-bold text-foreground/40 mt-4 uppercase tracking-widest flex items-center">
-            <TrendingUp size={14} className={`mr-2 ${Number(weightChange) <= 0 ? 'text-green-500' : 'text-red-500'}`} />
-            {Number(weightChange) === 0 
+            <TrendingUp size={14} className={`mr-2 ${weightChangeValue <= 0 ? 'text-green-500' : 'text-red-500'}`} />
+            {weightChangeValue === 0 
               ? 'Manteniendo peso estable' 
-              : `${weightChange > 0 ? '+' : ''}${weightChange} kg desde el inicio`
+              : `${weightChangeValue > 0 ? '+' : ''}${weightChange} kg desde el inicio`
             }
           </p>
         </motion.div>
