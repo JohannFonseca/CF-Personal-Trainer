@@ -29,6 +29,7 @@ interface RoutineItem {
   reps: string;
   rest_time: number;
   day_of_week: number | null;
+  notes: string;
 }
 
 export default function AssignRoutineModal({ isOpen, onClose, clientId, clientName }: AssignRoutineModalProps) {
@@ -104,7 +105,8 @@ export default function AssignRoutineModal({ isOpen, onClose, clientId, clientNa
         sets: 3,
         reps: '12',
         rest_time: 60,
-        day_of_week: globalDay
+        day_of_week: globalDay,
+        notes: ''
       }
     ]);
   };
@@ -131,7 +133,7 @@ export default function AssignRoutineModal({ isOpen, onClose, clientId, clientNa
         reps: item.reps,
         rest_time: item.rest_time,
         day_of_week: item.day_of_week,
-        notes: ''
+        notes: item.notes
       }));
 
       const { error } = await supabase.from('client_routines').insert(inserts);
@@ -375,7 +377,7 @@ export default function AssignRoutineModal({ isOpen, onClose, clientId, clientNa
                             onChange={e => updateRoutineItem(item.exercise_id, 'reps', e.target.value)}
                           />
                         </div>
-                        <div className="space-y-2">
+                        <div className="space-y-2 col-span-1">
                           <label className="text-[9px] font-black uppercase text-foreground/30 ml-2 flex items-center space-x-1">
                             <Clock size={10} />
                             <span>Descanso</span>
@@ -387,6 +389,16 @@ export default function AssignRoutineModal({ isOpen, onClose, clientId, clientNa
                             onChange={e => updateRoutineItem(item.exercise_id, 'rest_time', parseInt(e.target.value))}
                           />
                         </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[9px] font-black uppercase text-foreground/30 ml-2">Comentario Importante</label>
+                        <textarea 
+                          className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 font-medium text-sm min-h-[80px] outline-none focus:ring-1 focus:ring-primary"
+                          placeholder="Ej: Mantener espalda recta, fase excéntrica lenta..."
+                          value={item.notes}
+                          onChange={e => updateRoutineItem(item.exercise_id, 'notes', e.target.value)}
+                        />
                       </div>
                     </motion.div>
                   ))

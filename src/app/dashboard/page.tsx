@@ -16,6 +16,7 @@ type RoutineEntry = {
   reps: string;
   rest_time: number;
   day_of_week: number | null;
+  notes: string | null;
   created_at: string;
   exercises: {
     name: string;
@@ -214,8 +215,13 @@ export default function WorkoutsPage() {
       </header>
 
       {/* Day Selection Tabs */}
-      <div className="flex space-x-2 overflow-x-auto pb-2 no-scrollbar">
-        {days.map((day) => {
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-black tracking-tight uppercase italic">Tu Semana</h3>
+          <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em] animate-pulse">Selecciona un día</span>
+        </div>
+        <div className="flex space-x-2 overflow-x-auto pb-2 no-scrollbar">
+          {days.map((day) => {
           const isToday = day.value === new Date().getDay();
           return (
             <button
@@ -236,6 +242,7 @@ export default function WorkoutsPage() {
             </button>
           );
         })}
+        </div>
       </div>
 
       {/* Action Area */}
@@ -394,6 +401,17 @@ export default function WorkoutsPage() {
                       <p className="text-xl font-black italic">{routine.rest_time}s</p>
                     </div>
                   </div>
+
+                  {routine.notes && (
+                    <div className="mt-4 p-3 bg-primary/10 border border-primary/20 rounded-xl">
+                      <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1 flex items-center">
+                        <Activity size={10} className="mr-1" /> Nota del Coach
+                      </p>
+                      <p className="text-xs font-bold text-foreground/70 italic leading-relaxed">
+                        "{routine.notes}"
+                      </p>
+                    </div>
+                  )}
                 </motion.div>
               );
             })}
