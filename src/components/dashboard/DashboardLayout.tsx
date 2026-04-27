@@ -5,12 +5,22 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
   Dumbbell, TrendingUp, History, User, 
-  Flame, Bell, ChevronLeft
+  Flame, Bell, ChevronLeft, LogOut
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { createClient } from '@/lib/supabase/client';
+import { useRouter } from 'next/navigation';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const supabase = createClient();
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push('/login');
+    router.refresh();
+  };
 
   const navItems = [
     { name: 'Rutinas', icon: <Dumbbell size={24} />, path: '/dashboard' },
@@ -30,13 +40,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
           <h1 className="text-lg font-black italic tracking-tighter">CF TRAINER</h1>
         </div>
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-1 bg-orange-500/10 text-orange-500 px-3 py-1 rounded-full border border-orange-500/20">
+        <div className="flex items-center space-x-3">
+          <div className="hidden sm:flex items-center space-x-1 bg-orange-500/10 text-orange-500 px-3 py-1 rounded-full border border-orange-500/20">
             <Flame size={14} fill="currentColor" />
             <span className="text-xs font-black">5</span>
           </div>
-          <button className="text-foreground/40">
-            <Bell size={20} />
+          <button onClick={handleLogout} className="text-foreground/40 hover:text-red-500 transition-colors">
+            <LogOut size={20} />
           </button>
         </div>
       </header>
