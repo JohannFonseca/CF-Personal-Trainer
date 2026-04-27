@@ -27,6 +27,9 @@ export default function RoutinesPage() {
   const [loading, setLoading] = useState(true);
   const [routines, setRoutines] = useState<RoutineWithInfo[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedDay, setSelectedDay] = useState<number | null>(null);
+
+  const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
   const fetchRoutines = async () => {
     const { data } = await supabase
@@ -53,10 +56,12 @@ export default function RoutinesPage() {
     }
   };
 
-  const filteredRoutines = routines.filter(r => 
-    r.profiles?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    r.exercises?.name?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredRoutines = routines.filter(r => {
+    const matchesSearch = r.profiles?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         r.exercises?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesDay = selectedDay === null || r.day_of_week === selectedDay;
+    return matchesSearch && matchesDay;
+  });
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center">
@@ -71,23 +76,33 @@ export default function RoutinesPage() {
           <h1 className="text-4xl lg:text-6xl font-black tracking-tighter uppercase">Rutinas.</h1>
           <p className="text-foreground/40 font-bold uppercase tracking-widest text-[10px] mt-2">Control global de entrenamientos</p>
         </div>
-        <div className="flex items-center space-x-4">
-          <div className="relative group">
+        <div className="flex flex-col md:flex-row items-center gap-4">
+          <div className="relative group w-full md:w-auto">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground/20 group-focus-within:text-primary transition-colors" size={20} />
             <input 
               type="text"
-              placeholder="Buscar por atleta o ejercicio..."
-              className="bg-card border border-white/5 rounded-2xl pl-12 pr-6 py-4 outline-none focus:ring-2 focus:ring-primary/20 w-full md:w-72 font-bold"
+              placeholder="Buscar..."
+              className="bg-card border border-white/5 rounded-2xl pl-12 pr-6 py-4 outline-none focus:ring-2 focus:ring-primary/20 w-full md:w-64 font-bold text-sm"
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
             />
           </div>
+          <select 
+            className="bg-card border border-white/5 rounded-2xl px-6 py-4 outline-none focus:ring-2 focus:ring-primary/20 w-full md:w-48 font-bold text-sm appearance-none"
+            value={selectedDay === null ? '' : selectedDay}
+            onChange={e => setSelectedDay(e.target.value === '' ? null : parseInt(e.target.value))}
+          >
+            <option value="">Todos los días</option>
+            {dayNames.map((name, i) => (
+              <option key={i} value={i}>{name}</option>
+            ))}
+          </select>
           <button 
             onClick={() => window.location.href = '/admin/clients'}
-            className="bg-primary text-white px-8 py-4 rounded-2xl font-black text-sm shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all flex items-center space-x-2"
+            className="bg-primary text-white px-8 py-4 rounded-2xl font-black text-sm shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all flex items-center space-x-2 w-full md:w-auto justify-center"
           >
             <Plus size={20} />
-            <span className="hidden sm:inline">NUEVA ASIGNACIÓN</span>
+            <span className="uppercase tracking-widest text-[10px]">Nueva</span>
           </button>
         </div>
       </header>
@@ -110,11 +125,16 @@ export default function RoutinesPage() {
                 className="glass-card p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 hover:bg-white/[0.02] transition-all border border-white/5"
               >
                 <div className="flex items-center space-x-6">
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center text-white shadow-lg">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center text-white shadow-lg shrink-0">
                     <User size={24} />
                   </div>
                   <div>
-                    <h3 className="text-lg font-black tracking-tight uppercase italic">{routine.profiles?.full_name}</h3>
+                    <div className="flex items-center space-x-2">
+                      <h3 className="text-lg font-black tracking-tight uppercase italic">{routine.profiles?.full_name}</h3>
+                      <span className="text-[9px] font-black bg-primary/10 text-primary px-2 py-0.5 rounded-full uppercase tracking-tighter">
+                        {routine.day_of_week !== null ? dayNames[routine.day_of_week] : 'Cualquier día'}
+                      </span>
+                    </div>
                     <div className="flex items-center space-x-3 text-xs font-bold text-foreground/30 uppercase tracking-widest mt-1">
                       <Activity size={14} className="text-primary" />
                       <span>{routine.exercises?.name}</span>

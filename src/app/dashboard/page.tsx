@@ -188,12 +188,14 @@ export default function WorkoutsPage() {
   );
 
   const firstName = profile?.full_name?.split(' ')[0]?.toUpperCase() || 'CAMPEÓN';
+  const todayDate = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }).toUpperCase();
 
   return (
     <div className="p-6 space-y-10 pb-32">
       {/* Welcome Header */}
       <header className="flex justify-between items-start">
         <div className="space-y-1">
+          <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">{todayDate}</p>
           <h2 className="text-3xl font-black tracking-tighter">HOLA, {firstName}.</h2>
           <p className="text-foreground/40 font-bold text-xs uppercase tracking-widest flex items-center">
             <Trophy size={14} className="mr-2 text-yellow-500" />
@@ -213,19 +215,27 @@ export default function WorkoutsPage() {
 
       {/* Day Selection Tabs */}
       <div className="flex space-x-2 overflow-x-auto pb-2 no-scrollbar">
-        {days.map((day) => (
-          <button
-            key={day.label}
-            onClick={() => setSelectedDay(day.value)}
-            className={`px-5 py-3 rounded-2xl font-black text-xs transition-all shrink-0 ${
-              selectedDay === day.value 
-                ? 'bg-primary text-white shadow-lg shadow-primary/20 scale-105' 
-                : 'bg-white/5 text-foreground/40 hover:bg-white/10'
-            }`}
-          >
-            {day.label}
-          </button>
-        ))}
+        {days.map((day) => {
+          const isToday = day.value === new Date().getDay();
+          return (
+            <button
+              key={day.label}
+              onClick={() => setSelectedDay(day.value)}
+              className={`px-5 py-3 rounded-2xl font-black text-xs transition-all shrink-0 flex flex-col items-center ${
+                selectedDay === day.value 
+                  ? 'bg-primary text-white shadow-lg shadow-primary/20 scale-105' 
+                  : 'bg-white/5 text-foreground/40 hover:bg-white/10'
+              }`}
+            >
+              <span>{day.label}</span>
+              {isToday && (
+                <span className={`text-[8px] mt-0.5 ${selectedDay === day.value ? 'text-white/70' : 'text-primary'}`}>
+                  HOY
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {/* Action Area */}
@@ -251,8 +261,10 @@ export default function WorkoutsPage() {
           </div>
           <div className="flex items-center space-x-2">
             <div className="text-right mr-4">
-              <p className="text-[10px] font-black text-foreground/30 uppercase tracking-widest">Progreso</p>
-              <p className="text-lg font-black">{completedToday.length}/{routines.length}</p>
+              <p className="text-[10px] font-black text-foreground/30 uppercase tracking-widest">Progreso Hoy</p>
+              <p className="text-lg font-black">
+                {completedToday.filter(id => routines.filter(r => selectedDay === null || r.day_of_week === selectedDay || r.day_of_week === null).map(r => r.exercise_id).includes(id)).length} / {routines.filter(r => selectedDay === null || r.day_of_week === selectedDay || r.day_of_week === null).length}
+              </p>
             </div>
           </div>
         </div>

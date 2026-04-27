@@ -77,16 +77,18 @@ export default function AssignRoutineModal({ isOpen, onClose, clientId, clientNa
   };
 
   const handleLoadTemplate = (template: any) => {
+    // If we have a selected day in a hypothetical dropdown or just default to null,
+    // but let's make it easier for the coach to set the day for all items at once.
     const templateExercises = template.routine_exercises.map((re: any) => ({
       exercise_id: re.exercise_id,
       name: re.exercises.name,
       sets: re.sets,
       reps: re.reps,
       rest_time: re.rest_time,
-      day_of_week: null
+      day_of_week: null // Can be changed individually later
     }));
     
-    setSelectedExercises(templateExercises);
+    setSelectedExercises([...selectedExercises, ...templateExercises]);
     setShowTemplates(false);
   };
 
