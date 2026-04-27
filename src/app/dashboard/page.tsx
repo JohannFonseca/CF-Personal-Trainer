@@ -15,6 +15,8 @@ type RoutineEntry = {
   sets: number;
   reps: string;
   rest_time: number;
+  day_of_week: number | null;
+  created_at: string;
   exercises: {
     name: string;
     muscle_group: string;
@@ -33,6 +35,18 @@ export default function WorkoutsPage() {
   const [elapsedTime, setElapsedTime] = useState(0);
   const [finishing, setFinishing] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [selectedDay, setSelectedDay] = useState<number | null>(new Date().getDay()); // Default to today
+
+  const days = [
+    { label: 'DOM', value: 0 },
+    { label: 'LUN', value: 1 },
+    { label: 'MAR', value: 2 },
+    { label: 'MIE', value: 3 },
+    { label: 'JUE', value: 4 },
+    { label: 'VIE', value: 5 },
+    { label: 'SAB', value: 6 },
+    { label: 'TODO', value: null }
+  ];
 
   useEffect(() => {
     let interval: any;
@@ -197,6 +211,23 @@ export default function WorkoutsPage() {
         )}
       </header>
 
+      {/* Day Selection Tabs */}
+      <div className="flex space-x-2 overflow-x-auto pb-2 no-scrollbar">
+        {days.map((day) => (
+          <button
+            key={day.label}
+            onClick={() => setSelectedDay(day.value)}
+            className={`px-5 py-3 rounded-2xl font-black text-xs transition-all shrink-0 ${
+              selectedDay === day.value 
+                ? 'bg-primary text-white shadow-lg shadow-primary/20 scale-105' 
+                : 'bg-white/5 text-foreground/40 hover:bg-white/10'
+            }`}
+          >
+            {day.label}
+          </button>
+        ))}
+      </div>
+
       {/* Action Area */}
       {!isWorkoutActive ? (
         <motion.div 
@@ -266,31 +297,45 @@ export default function WorkoutsPage() {
           <h3 className="text-lg font-black tracking-tight uppercase">
             {isWorkoutActive ? 'Ejercicios de hoy' : 'Tu Rutina'}
           </h3>
-          <span className="text-[10px] font-black text-foreground/30 uppercase tracking-widest">{routines.length} ejercicios</span>
+          <span className="text-[10px] font-black text-foreground/30 uppercase tracking-widest">
+            {routines.filter(r => selectedDay === null || r.day_of_week === selectedDay || r.day_of_week === null).length} ejercicios
+          </span>
         </div>
 
-        {routines.length === 0 ? (
+        {routines.filter(r => selectedDay === null || r.day_of_week === selectedDay || r.day_of_week === null).length === 0 ? (
           <div className="py-24 text-center bg-card rounded-[2.5rem] border border-dashed border-white/10">
             <Dumbbell size={48} className="mx-auto text-foreground/10 mb-4" />
-            <h4 className="text-xl font-black mb-2">Sin rutina asignada</h4>
-            <p className="text-foreground/40 text-sm max-w-[200px] mx-auto">Tu entrenador aún no ha asignado ejercicios.</p>
+            <h4 className="text-xl font-black mb-2">Sin ejercicios para este día</h4>
+            <p className="text-foreground/40 text-sm max-w-[200px] mx-auto">Relájate o revisa otros días de tu plan.</p>
           </div>
         ) : (
           <div className="space-y-4">
-            {routines.map((routine, i) => {
+            {routines
+              .filter(r => selectedDay === null || r.day_of_week === selectedDay || r.day_of_week === null)
+              .map((routine, i) => {
               const isCompleted = completedToday.includes(routine.exercise_id);
+              const isNew = new Date(routine.created_at).getTime() > Date.now() - 24 * 60 * 60 * 1000;
+              
               return (
                 <motion.div
                   key={routine.id}
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.05 }}
-                  className={`group glass-card p-6 border transition-all ${
+                  className={`group glass-card p-6 border transition-all relative overflow-hidden ${
                     isCompleted 
                     ? 'border-green-500/20 bg-green-500/5 opacity-60 scale-[0.98]' 
                     : isWorkoutActive ? 'border-primary/20 bg-primary/[0.02]' : 'border-white/5 hover:bg-white/[0.03]'
                   }`}
                 >
+                  {isNew && !isCompleted && (
+                    <div className="absolute top-0 right-0">
+                      <div className="bg-primary text-white text-[8px] font-black px-3 py-1 uppercase tracking-tighter rounded-bl-xl shadow-lg">
+                        NUEVO
+                      </div>
+                    </div>
+                  )}
+
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm ${

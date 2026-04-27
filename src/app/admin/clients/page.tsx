@@ -58,6 +58,18 @@ export default function ClientsPage() {
   }, [selectedClient, isAssignModalOpen]);
 
 
+  const handleDeleteClient = async (clientId: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent opening the modal
+    if (confirm('¿ESTÁS SEGURO? Esta acción eliminará permanentemente al atleta y todo su historial de entrenamiento.')) {
+      const { error } = await supabase.from('profiles').delete().eq('id', clientId);
+      if (!error) {
+        setClients(clients.filter(c => c.id !== clientId));
+      } else {
+        alert('Error al eliminar: ' + error.message);
+      }
+    }
+  };
+
   const filteredClients = clients.filter(c => 
     (c.full_name || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -121,8 +133,17 @@ export default function ClientsPage() {
                 <div className="w-16 h-16 rounded-[1.5rem] bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center text-white font-black text-2xl shadow-xl shadow-primary/20 group-hover:scale-110 transition-transform">
                   {(client.full_name || '?').charAt(0).toUpperCase()}
                 </div>
-                <div className="flex flex-col items-end">
-                  <span className="text-[10px] font-black bg-green-500/20 text-green-500 px-3 py-1 rounded-full uppercase tracking-widest">Activo</span>
+                <div className="flex flex-col items-end space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-[10px] font-black bg-green-500/20 text-green-500 px-3 py-1 rounded-full uppercase tracking-widest">Activo</span>
+                    <button 
+                      onClick={(e) => handleDeleteClient(client.id, e)}
+                      className="p-1.5 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition-all shadow-lg shadow-red-500/5"
+                      title="Eliminar Atleta"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                   <p className="text-[9px] text-foreground/30 font-bold mt-2 uppercase">Meta: {client.goals?.split(' ')[0] || 'Fitness'}</p>
                 </div>
               </div>

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { 
   X, Search, Plus, Trash2, Dumbbell, 
-  Clock, Hash, Activity, Check, Loader2, Copy
+  Clock, Hash, Activity, Check, Loader2, Copy, Calendar
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -40,16 +40,26 @@ export default function AssignRoutineModal({ isOpen, onClose, clientId, clientNa
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedExercises, setSelectedExercises] = useState<RoutineItem[]>([]);
   const [saving, setSaving] = useState(false);
+  const [existingRoutines, setExistingRoutines] = useState<any[]>([]);
   const [status, setStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
 
   useEffect(() => {
     if (isOpen) {
       fetchExercises();
       fetchTemplates();
+      fetchExistingRoutines();
       setStatus(null);
       setShowTemplates(false);
     }
   }, [isOpen]);
+
+  const fetchExistingRoutines = async () => {
+    const { data } = await supabase
+      .from('client_routines')
+      .select('*, exercises(name)')
+      .eq('client_id', clientId);
+    setExistingRoutines(data || []);
+  };
 
   const fetchExercises = async () => {
     setLoading(true);
@@ -268,8 +278,25 @@ export default function AssignRoutineModal({ isOpen, onClose, clientId, clientNa
                   </motion.div>
                 )}
 
+                {/* Existing Routines Summary */}
+                {existingRoutines.length > 0 && !showTemplates && (
+                  <div className="mb-8 p-6 bg-primary/5 border border-primary/20 rounded-[2rem]">
+                    <h4 className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-4 flex items-center">
+                      <Activity size={12} className="mr-2" />
+                      Ejercicios Ya Asignados ({existingRoutines.length})
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {existingRoutines.map(r => (
+                        <span key={r.id} className="px-3 py-1 bg-white/5 border border-white/5 rounded-full text-[10px] font-bold text-foreground/40 uppercase">
+                          {r.exercises?.name} {r.day_of_week !== null && `(Día ${r.day_of_week})`}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {selectedExercises.length === 0 ? (
-                  <div className="h-full flex flex-row md:flex-col items-center justify-center text-center opacity-20 space-x-4 md:space-x-0 md:space-y-4">
+                  <div className="h-full flex flex-row md:flex-col items-center justify-center text-center opacity-20 space-x-4 md:space-x-0 md:space-y-4 py-20">
                     <Activity size={64} />
                     <p className="text-xl font-black uppercase italic tracking-tighter">Selecciona ejercicios para comenzar</p>
                   </div>
@@ -293,7 +320,7 @@ export default function AssignRoutineModal({ isOpen, onClose, clientId, clientNa
                         <h4 className="font-black uppercase italic text-lg tracking-tight">{item.name}</h4>
                       </div>
 
-                      <div className="grid grid-cols-3 gap-4">
+                      <div className="grid grid-cols-4 gap-4">
                         <div className="space-y-2">
                           <label className="text-[9px] font-black uppercase text-foreground/30 ml-2 flex items-center space-x-1">
                             <Hash size={10} />
@@ -321,7 +348,7 @@ export default function AssignRoutineModal({ isOpen, onClose, clientId, clientNa
                         <div className="space-y-2">
                           <label className="text-[9px] font-black uppercase text-foreground/30 ml-2 flex items-center space-x-1">
                             <Clock size={10} />
-                            <span>Descanso (s)</span>
+                            <span>Descanso</span>
                           </label>
                           <input 
                             type="number" 
@@ -329,6 +356,26 @@ export default function AssignRoutineModal({ isOpen, onClose, clientId, clientNa
                             value={item.rest_time}
                             onChange={e => updateRoutineItem(item.exercise_id, 'rest_time', parseInt(e.target.value))}
                           />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[9px] font-black uppercase text-foreground/30 ml-2 flex items-center space-x-1">
+                            <Calendar size={10} />
+                            <span>Día</span>
+                          </label>
+                          <select 
+                            className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 font-black text-center text-sm appearance-none outline-none focus:ring-1 focus:ring-primary"
+                            value={item.day_of_week === null ? '' : item.day_of_week}
+                            onChange={e => updateRoutineItem(item.exercise_id, 'day_of_week', e.target.value === '' ? null : parseInt(e.target.value))}
+                          >
+                            <option value="">Cualquier día</option>
+                            <option value="1">Lunes</option>
+                            <option value="2">Martes</option>
+                            <option value="3">Miércoles</option>
+                            <option value="4">Jueves</option>
+                            <option value="5">Viernes</option>
+                            <option value="6">Sábado</option>
+                            <option value="0">Domingo</option>
+                          </select>
                         </div>
                       </div>
                     </motion.div>
